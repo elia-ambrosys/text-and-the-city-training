@@ -1,12 +1,13 @@
 python: "3.11"
 build_dependencies:
-  - pip
-  - setuptools
-  - wheel
+  - pip==23.3.1
+  - setuptools==69.0.2
+  - wheel==0.42.0
 dependencies:
-  - transformers==4.38.2
-  - datasets==2.18.0
-  - mantik
-  - sklearn
-  - mlflow==2.2.2
-  - torch==2.2.1
+  - pandas
+  - mlflow
+  - 'transformers[torch]'
+  - datasets
+  - scikit-learn
+  - openpyxl
+  - torchvision
