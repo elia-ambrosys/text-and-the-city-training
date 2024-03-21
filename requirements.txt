@@ -1,5 +1,6 @@
-transformers[torch]==4.38.2
+transformers==4.38.2
 datasets==2.18.0
 mantik
 sklearn
-mlflow==2.2.2
+mlflow==2.2.2a
+torch==2.2.1
