@@ -19,22 +19,22 @@ def _get_required_env_var(name: str):
 
 
 DATA_FILE = _get_required_env_var("DATA_FILE")
-#MODEL_OUTPUT_DIR = _get_required_env_var("MODEL_OUTPUT_DIR")
-TRAINING_ARG_OUTPUT_DIR = _get_required_env_var("TRAINING_ARG_OUTPUT_DIR")
 
 
 def _clean_data(data_frame: pd.DataFrame):
-    data_frame = data_frame[data_frame['Name des pdata_frame Dokuments'].notnull()]
-    data_frame = data_frame.drop_duplicates(subset=['Name des pdata_frame Dokuments'])[['Name des pdata_frame Dokuments', "Inhalt"]]
+    data_frame = data_frame[data_frame['Name des pdf Dokuments'].notnull()]
+    no_duplicated_df = data_frame.drop_duplicates(subset=['Name des pdf Dokuments'])[
+        ['Name des pdf Dokuments', "Inhalt"]]
 
     def create_labels_column(row):
         return [1.0 if len(
-            data_frame[(data_frame['Name des pdata_frame Dokuments'] == row['Name des pdata_frame Dokuments']) & (data_frame["Ziel"] == label)].values) else 0.0
+            data_frame[(data_frame['Name des pdf Dokuments'] == row['Name des pdf Dokuments']) & (
+                        data_frame["Ziel"] == label)].values) else 0.0
                 for label in labels]
 
-    data_frame['labels'] = data_frame.apply(create_labels_column, axis=1)
-    data_frame = data_frame.rename(columns={'Inhalt': 'text'})[["text", "labels"]]
-    data_frame = data_frame.reset_index(drop=True)
+    no_duplicated_df['labels'] = no_duplicated_df.apply(create_labels_column, axis=1)
+    no_duplicated_df = no_duplicated_df.rename(columns={'Inhalt': 'text'})[["text", "labels"]]
+    data_frame = no_duplicated_df.reset_index(drop=True)
     return data_frame
 
 
@@ -65,7 +65,7 @@ def multi_label_metrics(predictions, labels, threshold=0.5):
     y_pred[np.where(probs >= threshold)] = 1
     y_true = labels
     f1_micro_average = sklearn.metrics.f1_score(y_true=y_true, y_pred=y_pred, average='micro')
-    roc_auc = sklearn.metrics.roc_auc_score(y_true, y_pred, average = 'micro')
+    roc_auc = sklearn.metrics.roc_auc_score(y_true, y_pred, average='micro')
     accuracy = sklearn.metrics.accuracy_score(y_true, y_pred)
     metrics = {'f1': f1_micro_average,
                'roc_auc': roc_auc,
@@ -76,7 +76,7 @@ def multi_label_metrics(predictions, labels, threshold=0.5):
 
 def compute_metrics(p: transformers.EvalPrediction):
     preds = p.predictions[0] if isinstance(p.predictions,
-            tuple) else p.predictions
+                                           tuple) else p.predictions
     result = multi_label_metrics(
         predictions=preds,
         labels=p.label_ids)
@@ -108,10 +108,10 @@ if __name__ == "__main__":
     tokenizer = transformers.AutoTokenizer.from_pretrained(HUGGING_FACE_NAME)
     dataset = get_dataset(df, tok_func, tokenizer, indices_train, indices_test)
     model = transformers.AutoModelForSequenceClassification.from_pretrained(HUGGING_FACE_NAME,
-                                                               problem_type="multi_label_classification",
-                                                               num_labels=len(labels),
-                                                               id2label=id2label,
-                                                               label2id=label2id)
+                                                                            problem_type="multi_label_classification",
+                                                                            num_labels=len(labels),
+                                                                            id2label=id2label,
+                                                                            label2id=label2id)
     parameters = {
         "learning_rate": 8e-5,
         "batch_size": batch_size,
@@ -119,7 +119,7 @@ if __name__ == "__main__":
         "epochs": epochs,
     }
     args = transformers.TrainingArguments(
-        TRAINING_ARG_OUTPUT_DIR,
+        "parameters",
         evaluation_strategy="epoch",
         save_strategy="epoch",
         learning_rate=parameters["learning_rate"],
@@ -141,14 +141,11 @@ if __name__ == "__main__":
     with mlflow.start_run():
         mlflow.log_params(parameters)
         trainer.train()
-        trainer.evaluate()
-        trainer.evaluate(eval_dataset=dataset["train"])
         components = {
             "model": model,
             "tokenizer": tokenizer,
         }
         mlflow.transformers.log_model(
             transformers_model=components,
-            artifact_path=HUGGING_FACE_NAME,
+            artifact_path=f"{HUGGING_FACE_NAME}-text-and-the-city",
         )
-        mlflow.log_artifact(TRAINING_ARG_OUTPUT_DIR)
