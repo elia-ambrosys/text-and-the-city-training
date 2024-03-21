@@ -1,0 +1,5 @@
+transformers[torch]==4.38.2
+datasets==2.18.0
+mantik
+sklearn
+mlflow==2.2.2

@@ -1,0 +1,10 @@
+name: text-and-the-city
+
+python_env: python_env.yaml
+
+entry_points:
+  train:
+    parameters:
+      batch-size: {type: int, default: 8}
+      epochs: {type: int, default: 1}
+    command: python train.py --batch-size {batch-size} --epochs {epochs}
